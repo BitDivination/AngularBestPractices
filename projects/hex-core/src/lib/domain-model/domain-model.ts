@@ -100,19 +100,35 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
   }
 
   validateSyncFields(updatedModel: Partial<T>): (keyof T)[] {
-    if (!updatedModel || !Object.keys(this.domainObjectMetadata || {})?.length) {
+    if (!updatedModel || !Object.keys(updatedModel).length || !Object.keys(this.domainObjectMetadata || {})?.length) {
       return [];
-    }
+    };
 
-    // Find all fields that violate their validators for the given model
-    return Object.keys(this.domainObjectMetadata).reduce(
-      (totalViolations, field) =>
-        updatedModel[field] &&
-        this.domainObjectMetadata[field]?.validator &&
-        this.domainObjectMetadata[field]?.validator(updatedModel[field])
-          ? [...totalViolations, field]
-          : totalViolations,
-      [],
+    // Validate that the fields match their expected metadata
+    return Object.keys(updatedModel).reduce(
+      (totalViolations, key) => {
+        // No metadata for field, field may be from a subclass or irrelevant to the current model
+        const fieldMetadata = this.domainObjectMetadata[key];
+        if (!this.domainObjectMetadata[key]) {
+          return totalViolations;
+        }
+
+        const field = key as keyof T;
+
+        // Validate required first
+        if (fieldMetadata.required && updatedModel[field] == null) {
+          return [...totalViolations, field];
+        }
+
+        // Validate validator does not return an error
+        const validator = fieldMetadata.validator;
+        if (validator && validator(updatedModel[field])) {
+          return [...totalViolations, field];
+        }
+
+        return totalViolations;
+      },
+      [] as (keyof T)[]
     );
   }
 
@@ -121,12 +137,13 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
       return [];
     }
 
-    return Object.keys(this.domainObjectMetadata)
-      .filter((field) => this.domainObjectMetadata[field].needsUpdateCertification)
-      .reduce(
-        (totalViolations, currentCertField) => (updatedModel[currentCertField] ? [...totalViolations, currentCertField] : totalViolations),
-        [],
-      );
+    return Object.keys(updatedModel).reduce(
+      (totalViolations, key) => {
+        const field = key as keyof T;
+        return !!this.domainObjectMetadata[field]?.needsUpdateCertification ? [...totalViolations, field] : totalViolations
+      },
+      [] as (keyof T)[]
+    );
   }
 
   validateModelIsComplete(updatedModel: Partial<T>): (keyof T)[] {
@@ -134,12 +151,12 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
       return [];
     }
 
-    return Object.keys(this.domainObjectMetadata)
-      .filter((field) => this.domainObjectMetadata[field].required)
-      .reduce(
-        (totalViolations, currentRequiredField) =>
-          updatedModel[currentRequiredField] == null ? [...totalViolations, currentRequiredField] : totalViolations,
-        [],
-      );
+    return Object.keys(this.domainObjectMetadata).reduce(
+      (totalViolations, key) => {
+        const field = key as keyof T;
+        return this.domainObjectMetadata[field].required && updatedModel[field] == null ? [...totalViolations, field] : totalViolations;
+      },
+      [] as (keyof T)[]
+    );;
   }
 }
