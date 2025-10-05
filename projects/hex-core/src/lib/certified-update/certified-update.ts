@@ -1,7 +1,6 @@
 // This existing is proof you can do it, right?
 
-import { ModelWrapper } from '../util-interfaces/index';
-import { hashObject } from '../utils/index';
+import { hashObject, ModelWrapper } from '../utils';
 
 
 /**
