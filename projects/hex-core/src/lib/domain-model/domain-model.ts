@@ -113,6 +113,11 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
       throw new InvalidUpdateError({ asyncFields: asyncFieldViolations });
     }
 
+    const requiredFieldValidations = this.validateNoNonNullRequiredFieldUpdates(patchFields);
+    if (requiredFieldValidations.length) {
+      throw new InvalidUpdateError({ requiredFields: requiredFieldValidations });
+    }
+
     return new this.ctor(this.ctor, { ...this.model, ...patchFields } as T, this.builderMode);
   }
 
@@ -193,6 +198,22 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
       (totalViolations, key) => {
         const field = key as keyof T;
         return !!this.domainObjectMetadata[field]?.needsUpdateCertification ? [...totalViolations, field] : totalViolations
+      },
+      [] as (keyof T)[]
+    );
+  }
+
+  validateNoNonNullRequiredFieldUpdates(updatedModel: Partial<T>): (keyof T)[] {
+    if (!updatedModel || !Object.keys(this.domainObjectMetadata || {})?.length) {
+      return [];
+    }
+
+    return Object.keys(updatedModel).reduce(
+      (totalViolations, key) => {
+        const field = key as keyof T;
+        return this.domainObjectMetadata[field]?.required && updatedModel[field] == null ?
+          [...totalViolations, field] :
+          totalViolations;
       },
       [] as (keyof T)[]
     );
