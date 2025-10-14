@@ -6,7 +6,10 @@
     "strict": true,
     "paths": {
       "@hex/core": [
-        "./dist/hex-core"
+        "./projects/hex-core/src/public-api.ts"
+      ],
+      "@hex/imp": [
+        "./projects/hex-imp/src/public-api.ts"
       ]
     },
     "noImplicitOverride": true,

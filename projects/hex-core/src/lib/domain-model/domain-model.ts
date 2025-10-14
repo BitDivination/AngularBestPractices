@@ -14,7 +14,6 @@ import {
  */
 export interface FieldMetadata {
   required: boolean;
-  needsUpdateCertification: boolean;
   validator?: (value: any) => string | null;
 }
 
@@ -62,7 +61,7 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
 
   /**
    * Function used to unwrap the raw data model from the logic.
-   * 
+   *
    * @param returnPartial Whether or not a partial model should be returned by the function, or if the model being built should be validated.
    * @returns The complete model, incomplete model in the case of returning a partial, or an error when in builder mode and the model is incomplete.
    */
@@ -84,7 +83,7 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
 
   /**
    * Update a field in the model with the given value
-   * 
+   *
    * @param field field in the model to update
    * @param value value for the field
    * @returns new instance of the DomainModel
@@ -98,7 +97,7 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
 
   /**
    * Update multiple fields for the given model, validate each field to ensure model status.
-   * 
+   *
    * @param patchFields list of fields containing changes to the model. Will only validate fields that apply to the model's metadata
    */
   patch<F extends keyof T>(patchFields: Pick<T, F>): this;
@@ -106,11 +105,6 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
     const syncFieldViolations = this.validateSyncFields(patchFields);
     if (syncFieldViolations.length) {
       throw new InvalidUpdateError({ syncFields: syncFieldViolations });
-    }
-
-    const asyncFieldViolations = this.validateNoAsyncFieldUpdates(patchFields);
-    if (asyncFieldViolations.length) {
-      throw new InvalidUpdateError({ asyncFields: asyncFieldViolations });
     }
 
     const requiredFieldValidations = this.validateNoNonNullRequiredFieldUpdates(patchFields);
@@ -146,9 +140,9 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
 
   /**
    * Validate all of the proposed updated to the model and find any potential violations
-   * 
-   * @param updatedModel 
-   * @returns 
+   *
+   * @param updatedModel
+   * @returns
    */
   validateSyncFields(updatedModel: Partial<T>): (keyof T)[] {
     if (!updatedModel || !Object.keys(updatedModel).length || !Object.keys(this.domainObjectMetadata || {})?.length) {
@@ -183,26 +177,6 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
     );
   }
 
-  /**
-   * Validate that all of the potential updates do not touch fields that require async (certified update) validation
-   * 
-   * @param updatedModel 
-   * @returns 
-   */
-  validateNoAsyncFieldUpdates(updatedModel: Partial<T>): (keyof T)[] {
-    if (!updatedModel || !Object.keys(this.domainObjectMetadata || {})?.length) {
-      return [];
-    }
-
-    return Object.keys(updatedModel).reduce(
-      (totalViolations, key) => {
-        const field = key as keyof T;
-        return !!this.domainObjectMetadata[field]?.needsUpdateCertification ? [...totalViolations, field] : totalViolations
-      },
-      [] as (keyof T)[]
-    );
-  }
-
   validateNoNonNullRequiredFieldUpdates(updatedModel: Partial<T>): (keyof T)[] {
     if (!updatedModel || !Object.keys(this.domainObjectMetadata || {})?.length) {
       return [];
@@ -222,8 +196,8 @@ export abstract class DomainModel<T extends object> implements ModelWrapper<T>, 
   /**
    * Validate that the model is complete and all required fields have a value
    *
-   * @param updatedModel 
-   * @returns 
+   * @param updatedModel
+   * @returns
    */
   validateModelIsComplete(updatedModel: Partial<T>): (keyof T)[] {
     if (!updatedModel || !Object.keys(this.domainObjectMetadata || {})?.length) {
