@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
+import { Result } from '../utils';
 
-export interface UseCase<R, E> {
-  execute(...args: any[]): Observable<R | E>;
+export abstract class UseCase<R, E> {
+  abstract execute(...args: any[]): Observable<Result<R, E>>;
 }

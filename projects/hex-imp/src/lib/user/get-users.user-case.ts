@@ -1,10 +1,6 @@
-import { UseCase } from '@hex/core';
+import { Result, UseCase } from '@hex/core';
 import { User } from './user.model';
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
-import { UserDataModel } from './user.interface';
+import { Observable } from 'rxjs';
 
 export class NoPermissionsError extends Error {
   constructor(message: string = 'User does not have permissions to perform this action') {
@@ -22,4 +18,7 @@ export class GetUserSpecificError extends Error {
   }
 }
 
-export type GetUsersUseCase = UseCase<User[], NoPermissionsError | GetUserSpecificError>;
+// NOTE: Return type will be different
+export abstract class GetUsersUseCase extends UseCase<User[], NoPermissionsError | GetUserSpecificError> {
+  abstract override execute(userId: number): Observable<Result<User[], NoPermissionsError | GetUserSpecificError>>;
+}
